@@ -3,26 +3,26 @@ from sqlalchemy.dialects.mysql import VARCHAR
 from sqlalchemy import create_engine, ForeignKey, Text, Enum
 from sqlalchemy import Column, Integer, Date, TIME
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
-from enum import Enum as enum
+from sqlalchemy.orm import sessionmaker, relationship, scoped_session
+from marshmallow import Schema, fields, validate
 
-engine = create_engine('postgresql+psycopg2://postgres:mypass@localhost:5432/iiskovych')
+engine = create_engine('postgresql+psycopg2://postgres:pass@localhost:5432/iiskovych')
+
 base = declarative_base()
 
 
-class Users(base):
-    __tablename__ = "users"
-
+class User(base):
+    tablename = "user"
     userId = Column(Integer, ForeignKey("userName.userId"), primary_key=True)
     username = Column(VARCHAR(45), nullable=False)
     firstName = Column(VARCHAR(45), nullable=False)
     lastName = Column(VARCHAR(45), nullable=False)
     email = Column(VARCHAR(45), nullable=False)
     password = Column(VARCHAR(45), nullable=False)
-    phone = Column(VARCHAR(45), nullable=True)
-    userStatus = Column(VARCHAR(45), nullable=True)
+    phone = Column(Integer, nullable=True)
+    userType = Column(VARCHAR(45), nullable=False)
 
-    def __init__(self, userId, username, firstName, lastName, email, password, phone, userStatus):
+    def init(self, userId, username, firstName, lastName, email, password, phone, userType):
         self.userId = userId
         self.username = username
         self.firstName = firstName
@@ -30,57 +30,61 @@ class Users(base):
         self.email = email
         self.password = password
         self.phone = phone
-        self.userStatus = userStatus
+        self.userType = userType
 
 
 class UserName(base):
-    __tablename__ = "userName"
+    tablename = "userName"
     userId = Column(Integer, primary_key=True)
     firstName = Column(VARCHAR(45), nullable=False)
     lastName = Column(VARCHAR(45), nullable=False)
     email = Column(VARCHAR(45), nullable=False)
+    userType = Column(VARCHAR(45), nullable=False)
 
-    def __init__(self, userId, firstName, lastName, email):
+    def init(self, userId, firstName, lastName, email, userType):
         self.userId = userId
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
+        self.userType = userType
 
 
-class Member(base):
-    __tablename__ = "member"
-    memberId = Column(Integer, ForeignKey("userName.userId"), primary_key=True)
-    event = Column(Integer, ForeignKey("event.eventId"), nullable=False)
-    role = Column(VARCHAR(45), nullable=False)
-    power = Column(VARCHAR(45), nullable=False)
+class Car(base):
+    tablename = "car"
+    carId = Column(Integer, primary_key=True)
+    model = Column(VARCHAR(45), nullable=False)
+    carType = Column(VARCHAR(45), nullable=False)
+    petrol = Column(VARCHAR(45), nullable=False)
+    carStatus = Column(VARCHAR(45), nullable=False)
 
-    def __init__(self, memberId, event, role, power):
-        self.memberId = memberId
-        self.event = event
-        self.role = role
-        self.power = power
+    def init(self, carId, model, carType, petrol, carStatus):
+        self.carId = carId
+        self.model = model
+        self.carType = carType
+        self.petrol = petrol
+        self.carStatus = carStatus
 
 
-class Event(base):
-    __tablename__ = "event"
-    eventId = Column(Integer, primary_key=True)
-    name = Column(VARCHAR(45),  nullable=False)
-    dayStart = Column(Date,  nullable=False)
-    dayEnd = Column(Date,  nullable=False)
-    timeStart = Column(TIME,  nullable=False)
-    timeEnd = Column(TIME,  nullable=False)
+class RentSeance(base):
+    tablename = "RentSeance"
+    rentId = Column(Integer, primary_key=True)
+    rentStart = Column(Date, nullable=False)
+    timeStart = Column(Time, nullable=False)
+    rentEnd = Column(Date, nullable=False)
+    timeEnd = Column(Time, nullable=False)
+    renterId = Column(Integer, ForeignKey(User.userId), nullable=False)
+    carId = Column(Integer, ForeignKey(Car.carId), nullable=False)
     status = Column(VARCHAR(45), nullable=False)
 
-    def __init__(self, eventId, name, dayStart, dayEnd, timeStart, timeEnd, status):
-        self.eventId = eventId
-        self.name = name
-        self.dayStart = dayStart
-        self.dayEnd = dayEnd
+    def init(self, rentId, rentStart, timeStart, rentEnd, timeEnd, renterId, carId, status):
+        self.rentId = rentId
+        self.rentStart = rentStart
         self.timeStart = timeStart
+        self.rentEnd = rentEnd
         self.timeEnd = timeEnd
+        self.renterId = renterId
+        self.carId = carId
         self.status = status
-
-# base.metadata.tables["users"].create(bind=engine)
 
 
 base.metadata.create_all(engine)

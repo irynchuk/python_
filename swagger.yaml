@@ -21,9 +21,46 @@ paths:
     get:
       tags:
         - member
-      summary: Get your event by role
+      summary: Get your member by role
       description: You can get event created by you
       operationId: getByRole
+      parameters:
+        - name: role
+          in: query
+          description: Role values that need to be considered for filter
+          required: false
+          explode: true
+          schema:
+            type: string
+            default: added
+            enum:
+              - admin
+              - added
+
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          description: Invalid status value
+      security:
+        - user_auth:
+          - write:members
+          - read:members
+
+  /member/events:
+    get:
+      tags:
+        - member
+      summary: Get your members event
+      description: You can get event created by you
+      operationId: getevenrforuser
       parameters:
         - name: role
           in: query
@@ -84,36 +121,82 @@ paths:
             application/xml:
               schema:
                 $ref: '#/components/schemas/User'
-  /user/createWithList:
-    post:
+
+  /user/findByName:
+    get:
       tags:
         - user
-      summary: Creates list of users with given input array
-      description: Creates list of users with given input array
-      operationId: createUsersWithListInput
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/UserName'
+      summary: Finds event by name
+      description: You can find one of your events by name
+      operationId: findUserByName
+      parameters:
+        - name: name
+          in: query
+          description: name to filter by
+          required: false
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         '200':
-          description: Successful operation
+          description: successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserName'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
             application/xml:
               schema:
-                $ref: '#/components/schemas/UserName'
-        default:
-          description: successful operation
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+        '400':
+          description: Invalid tag value
       security:
         - user_auth:
-            - write:usernames
-            - read:usernames
+          - write:events
+          - read:events
+
+  /user/{userId}:
+    get:
+      tags:
+        - user
+      summary: Finds event by id
+      description: Return a event with id you write
+      operationId: findUserById
+      parameters:
+        - name: userId
+          in: path
+          description: ID of event to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+            description: Successful operation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Event'
+              application/xml:
+                schema:
+                  $ref: '#/components/schemas/Event'
+        '400':
+              description: Invalid ID supplied
+        '404':
+             description: Event not found
+        '405':
+             description: Validation exception
+      security:
+        - api_key: []
+        - user_auth:
+          - write:events
+          - read:events
+
   /user/login:
     get:
       tags:
@@ -146,53 +229,6 @@ paths:
                 $ref: '#/components/schemas/User'
         '400':
           description: Invalid username/password supplied
-  /user/logout:
-    get:
-      tags:
-        - user
-      summary: Logs out current logged in user session
-      description: ''
-      operationId: logoutUser
-      parameters: []
-      responses:
-        default:
-          description: successful operatio
-      security:
-        - user_auth:
-            - write:events
-            - read:events
-  /user/{username}:
-    get:
-      tags:
-        - user
-      summary: Get user by user name
-      description: ''
-      operationId: getUserByName
-      parameters:
-        - name: username
-          in: path
-          description: 'The name that needs to be fetched. Use user1 for testing. '
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserName'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/UserName'
-        '400':
-          description: Invalid username supplied
-        '404':
-          description: User not found
-      security:
-        - user_auth:
-            - write:events
-            - read:events
     put:
       tags:
         - user
@@ -225,6 +261,22 @@ paths:
         - user_auth:
             - write:events
             - read:events
+
+  /user/logout:
+    get:
+      tags:
+        - user
+      summary: Logs out current logged in user session
+      description: ''
+      operationId: logoutUser
+      parameters: []
+      responses:
+        default:
+          description: successful operatio
+      security:
+        - user_auth:
+            - write:events
+            - read:events
     delete:
       tags:
         - user
@@ -249,6 +301,42 @@ paths:
             - read:events
 
   /event:
+    post:
+      tags:
+        - event
+      summary: Add a new event
+      description: Add a new event for you or a company
+      operationId: addEvent
+      requestBody:
+        description: Create a new event
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Event'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Event'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '405':
+          description: Invalid input
+      security:
+        - user_auth:
+          - write:events
+          - read:events
+
     put:
       tags:
         - event
@@ -288,77 +376,7 @@ paths:
         - user_auth:
           - write:events
           - read:events
-    post:
-      tags:
-        - event
-      summary: Add a new event
-      description: Add a new event for you or a company
-      operationId: addEvent
-      requestBody:
-        description: Create a new event
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Event'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Event'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Event'
-        required: true
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Event'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Event'
-        '405':
-          description: Invalid input
-      security:
-        - user_auth:
-          - write:events
-          - read:events
-  /event/findByStatus:
-    get:
-      tags:
-        - event
-      summary: Finds event by status
-      description: Multiple status values can be provided with comma separated strings
-      operationId: findEventsByStatus
-      parameters:
-        - name: status
-          in: query
-          description: Status values that need to be considered for filter
-          required: false
-          explode: true
-          schema:
-            type: string
-            default: future
-            enum:
-              - future
-              - in_process
-              - ended
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Event'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Event'
-        '400':
-          description: Invalid status value
-      security:
-        - user_auth:
-          - write:events
-          - read:events
+
 
   /event/findByName:
     get:
@@ -435,66 +453,9 @@ paths:
           - write:events
           - read:events
 
-    delete:
-      tags:
-        - event
-      summary: Delete a event
-      description: delete a event
-      operationId: deleteEvent
-      parameters:
-        - name: api_key
-          in: header
-          description: ''
-          required: false
-          schema:
-            type: string
-        - name: eventId
-          in: path
-          description: Event id to delete
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '400':
-          description: Invalid event value
-      security:
-        - user_auth:
-            - write:events
-            - read:events
 
-  /event/{eventId}/addMemberToEvent:
-    post:
-      tags:
-        - event
-      summary: add member
-      description: Add member to your event
-      operationId: addMemberToEvent
-      parameters:
-        - name: eventId
-          in: path
-          description: Id event for which you want add another user
-          required: true
-          schema:
-            type: integer
-            format: inr64
-        - name: additionalMember
-          in: query
-          description: Additional user
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserName'
-      security:
-        - user_auth:
-            - write:usernames
-            - read:usernames
+
+
 
 components:
   schemas:
